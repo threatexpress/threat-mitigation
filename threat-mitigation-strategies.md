@@ -10,7 +10,7 @@ The following information was composed by Andrew Chiles (@andrewchiles), Joe Ves
 - [Windows Logs](#windows-logs)
 - [Disable Windows Legacy & **Typically** Unused Features](#disable-windows-legacy-typically-unused-features)
 - [Configurations](#configurations)
-- [Manual Hunting and Detection Examples](#manual-hunting-and-detection)
+- [Manual Hunting and Detection Examples](#manual-hunting-and-detection-examples)
 - [Additional Useful Info](#additional-useful-info)
 
 ---
