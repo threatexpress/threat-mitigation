@@ -30,6 +30,7 @@ The following information was composed by Andrew Chiles (@andrewchiles), Joe Ves
     - Implement Microsoft Local Administrator Password Solution (LAPS)
     - Implement Two Factor Authentication (2FA)
 - Account and Event Activity
+    - Log activity but specifically monitor deviations (or attempts) from recommended configurations above
     - Monitor login failures and successes
     - Consider implementing a second instance or dashboard (or properly tuning the primary)
 - Perform a sensitive items review
