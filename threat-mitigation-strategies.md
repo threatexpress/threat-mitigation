@@ -36,6 +36,7 @@ The following information was composed by Andrew Chiles (@andrewchiles), Joe Ves
 - Perform a sensitive items review
 - Application White-listing
 
+---
 
 ## Account Management
 
