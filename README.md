@@ -10,5 +10,6 @@ This data is intended to be more of a brain dump rather than a complete technica
 ## Additional Links
 
 Also check out our other scripts and blog post:
-[Threat Express Github](https://github.com/threatexpress/)
-[Threat Express Blog](https://threatexpress.com/)
+
+- [Threat Express Github](https://github.com/threatexpress/)
+- [Threat Express Blog](https://threatexpress.com/)
