@@ -28,7 +28,7 @@ The following information was composed by Andrew Chiles (@andrewchiles), Joe Ves
     - Ensure group permissions are appropriately identified and mapped
     - Implement Microsoft Local Administrator Password Solution (LAPS)
     - Implement Two Factor Authentication (2FA)
--Account and Event Activity
+- Account and Event Activity
     - Monitor login failures and successes
     - Consider implementing a second instance or dashboard (or properly tuning the primary)
 - Perform a sensitive items review
