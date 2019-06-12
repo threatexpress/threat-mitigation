@@ -11,6 +11,7 @@ The following information was composed by Andrew Chiles (@andrewchiles), Joe Ves
 - [Disable Windows Legacy or Unused Features](#disable-windows-legacy-or-unused-features)
 - [Configurations](#configurations)
 - [Manual Hunting and Detection Examples](#manual-hunting-and-detection-examples)
+    - [Splunk](#splunk)
 - [Additional Useful Info](#additional-useful-info)
 
 ---
