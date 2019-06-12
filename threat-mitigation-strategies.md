@@ -8,7 +8,7 @@ The following information was composed by Andrew Chiles (@andrewchiles), Joe Ves
 - [General Recommendations](#general-recommendations)
 - [Account Management](#account-management)
 - [Windows Logs](#windows-logs)
-- [Disable Windows Legacy & **Typically** Unused Features](#disable-windows-legacy-typically-unused-features)
+- [Disable Windows Legacy or Unused Features](#disable-windows-legacy-or-unused-features)
 - [Configurations](#configurations)
 - [Manual Hunting and Detection Examples](#manual-hunting-and-detection-examples)
 - [Additional Useful Info](#additional-useful-info)
@@ -302,7 +302,8 @@ Many PowerShell offensive tools use the following calls which are logged in Powe
 * https://github.com/MicrosoftDocs/windows-itpro-docs/blob/master/windows/threat-protection/use-windows-event-forwarding-to-assist-in-instrusion-detection.md
 * * *
 
-## Disable Windows Legacy & **Typically** Unused Features
+## Disable Windows Legacy or Unused Features
+**Note many are Typically Unused**
 
 The reference (Securing Windows Workstations: Developing a Secure Baseline) located at https://adsecurity.org/?p=3299 contains a wealth of information to help reduce security risks in a Windows Domain. Key mitigations are highlighted below.
 
