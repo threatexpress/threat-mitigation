@@ -1226,6 +1226,16 @@ SecRule RESPONSE_BODY "badguy" "phase:4, msg:'HoneyToken Exfil Detected', tag:'H
 
 Note these are examples and are mainly illustrated as templates for creating your own internal searches
 
+##### Potential Beaconing Activity
+```
+tag=dns message_type="QUERY" | fields _time, query | streamstats current=f last(_time) as last_time by query | eval gap=last_time - _time | stats count avg(gap) AS AverageBeaconTime var(gap) AS VarianceBeaconTime BY query | eval AverageBeaconTime=round(AverageBeaconTime,3), VarianceBeaconTime=round(VarianceBeaconTime,3) | sort -count | where VarianceBeaconTime < 60 AND count > 2 AND AverageBeaconTime>1.000 | table  query VarianceBeaconTime  count AverageBeaconTime
+```
+
+##### Number of hosts potentially beaconing
+```
+tag=dns message_type="QUERY" | fields _time, src, query | streamstats current=f last(_time) as last_time by query | eval gap=last_time - _time | stats count dc(src) AS NumHosts avg(gap) AS AverageBeaconTime var(gap) AS VarianceBeaconTime BY query | eval AverageBeaconTime=round(AverageBeaconTime,3), VarianceBeaconTime=round(VarianceBeaconTime,3) | sort –count | where VarianceBeaconTime < 60 AND AverageBeaconTime > 0
+```
+
 ##### New unauthorized service
 
 `index=windows LogName=System EventCode=7045 NOT (Service_Name=<yourscanner>) | eval Message=split(Message,".") | eval Short_Message=mvindex(Message,0) | table_time, host, Service_Name, Service_Type, Service_Start_Type, Service_Account, Short_Message`
@@ -1250,7 +1260,7 @@ Note these are examples and are mainly illustrated as templates for creating you
 
 `index=sysmon sourcetype="WinEventLog:Microsoft-Windows-Sysmon/Operational" (PipeEvent "Pipe Created") | search (EventCode=17 (PipeName="\*")) | stats values (Image) AS Images values(PipeName) AS PipeNames count by TaskCategory ComputerName`
 
-#### Detect WMI
+##### Detect WMI
 
 `index=sysmon Image="*\WMIC.exe" (CommandLine="*process call create*" OR CommandLine="*/NODE:*") | stats count by Computer,CommandLine`
 
@@ -1258,7 +1268,7 @@ and
 
 `index=sysmon ParentImage="*\WmiPrvSE.exe" | stats count by Computer,CommandLine`
 
-#### Detect PowerShell Commands
+##### Detect PowerShell Commands
 
 `index=sysmon ParentImage="*wsmprovhost.exe" | stats count by Computer,CommandLine`
 
