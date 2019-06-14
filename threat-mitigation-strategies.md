@@ -1,6 +1,6 @@
 # Threat Mitigation Strategies
 
-The following information was composed by Andrew Chiles (@andrewchiles), Joe Vest (@joevest) and myself (@minis_io) for quick and easy reference. Much of it was pulled together from a variety of sources with attempts to provide references for each. This data is intended to be more of a brain dump rather than a complete technical breakout and was originally a two part threatexpress.com blog post in 2018.
+The following information was composed by Andrew Chiles (@andrewchiles), Joe Vest (@joevest) and James Tubberville (@minis_io) for quick and easy reference. Much of it was pulled together from a variety of sources with attempts to provide references for each. This data is intended to be more of a brain dump rather than a complete technical breakout and was originally a two part threatexpress.com blog post in 2018.
 
 
 <!-- MarkdownTOC depth=3 autolink=true -->
