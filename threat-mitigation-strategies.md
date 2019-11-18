@@ -1022,7 +1022,7 @@ Just a few logs that can be used to gather information. Note, custom logs can be
 | loaded_scripts.log                   | Scripts loaded on start                 |  
 | reporter.log                         | Severity of issues with bro             |  
 | software.log                         | Determines version of detected protocol |  
-| various protocols (http,dns,ssl,etc) | Activity log per protocol               |  
+| various protocols (http,dns,ssl,,tls,etc) | Activity log per protocol               |  
 
 ##### BRO Protocol Logs
 
