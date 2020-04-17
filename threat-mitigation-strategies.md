@@ -8,10 +8,20 @@ The following information was composed by Andrew Chiles (@andrewchiles), Joe Ves
 - [General Recommendations](#general-recommendations)
 - [Account Management](#account-management)
 - [Windows Logs](#windows-logs)
-- [Disable Windows Legacy or Unused Features](#disable-windows-legacy-or-unused-features)
-- [Configurations](#configurations)
+    -[PowerShell Module Logging](#powershell-module-logging)
+- [Windows Recommended Configurations](#windows-recommended-configurations)
+    - [Disable Windows Legacy or Unused Features](#disable-windows-legacy-or-unused-features)
+    - [Other Configurations](#other-configurations)
 - [Manual Hunting and Detection Examples](#manual-hunting-and-detection-examples)
-    - [Splunk](#splunk)
+- [Linux Logs](#linux-logs)
+- [Network](#network)
+    - [Basic PCAP Carving (*nix)](#basic-pcap-carving-nix)
+    - [ELSA(BRO queries)](#elsa-bro-queries) 
+    - [BRO Logs](#bro-logs)
+    - [BRO Carving](#bro-carving)
+    - [ModSecurity rules](#modsecurity-rules)
+    - [Splunk Examples](#splunk-examples)
+    - [Snort Examples](#snort-examples)
 - [Additional Useful Info](#additional-useful-info)
 
 ---
@@ -303,14 +313,17 @@ Many PowerShell offensive tools use the following calls which are logged in Powe
 * https://github.com/iadgov/Event-Forwarding-Guidance/tree/master/Subscriptions/samples
 * https://docs.microsoft.com/en-us/windows/threat-protection/use-windows-event-forwarding-to-assist-in-instrusion-detection
 * https://github.com/MicrosoftDocs/windows-itpro-docs/blob/master/windows/threat-protection/use-windows-event-forwarding-to-assist-in-instrusion-detection.md
+
 * * *
 
-## Disable Windows Legacy or Unused Features
+## Windows Recommended Configurations
+
+### Disable Windows Legacy or Unused Features
 **Note many are Typically Unused**
 
 The reference (Securing Windows Workstations: Developing a Secure Baseline) located at https://adsecurity.org/?p=3299 contains a wealth of information to help reduce security risks in a Windows Domain. Key mitigations are highlighted below.
 
-### Force Group Policy to reapply settings during "refresh"
+#### Force Group Policy to reapply settings during "refresh"
 
 `Computer Configuration>Policies>Administrative Templates>System>Group Policy>Configure security policy processing`
 
@@ -325,14 +338,14 @@ It's also recommended to configure the same settings for each of the following:
 * As well as any other policy settings as needed.
 * * *
 
-### Disable Unneeded Services
+#### Disable Unneeded Services
 
 The document Service-management-WS2016.xlsx contains a list default services, their state, use, and if it is safe to disable.
 
 * Review the Services outlined in the document Service-management-WS2016.xlsx
 * Create a list of service to disable, and enforce via GPO
 
-### Disable Net Session Enumeration (NetCease)
+#### Disable Net Session Enumeration (NetCease)
 
 This hardening process prevents attackers from easily getting some valuable recon information to move laterally within their victim's network.
 
@@ -345,7 +358,7 @@ This hardening process prevents attackers from easily getting some valuable reco
 * https://adsecurity.org/?p=3299
 * * *
 
-### Disable WPAD
+#### Disable WPAD
 
 Web Proxy Auto-Discovery Protocol (WPAD) is "a method used by clients to locate the URL of a configuration file using DHCP and/or DNS discovery methods. Once detection and download of the configuration file is complete, it can be executed to determine the proxy for a specified URL."
 
@@ -364,7 +377,7 @@ Partial mitigation of WPAD issues is possible by installing the Microsoft patch 
 
 * * *
 
-### Disable LLMNR
+#### Disable LLMNR
 
 Link-Local Multicast Name Resolution (LLMNR):  
 In a nutshell, Link-Local Multicast Name Resolution (LLMNR) resolves single label names (like: COMPUTER1), on the local subnet, when DNS is unable to resolve the name.
@@ -376,7 +389,7 @@ Set "Turn Off Multicast Name Resolution" to "Enabled"`
 
 * * *
 
-### Disable WDigest
+#### Disable WDigest
 
 WDigest provides support for Digest authentication which is: "An industry standard that is used in Windows Server 2003 for Lightweight Directory Access Protocol (LDAP) and Web authentication. Digest Authentication transmits credentials across the network as an MD5 hash or message digest."
 
@@ -391,7 +404,7 @@ Disable WDigest via Group Policy by deploying the following registry change:
 * https://adsecurity.org/?p=3299
 * * *
 
-### Remove the use of NTLM v1
+#### Remove the use of NTLM v1
 
 Windows Server 2008 R2 included features to help identify NTLM authentication use on the network. It is important to completely remove these legacy authentication protocols since they are insecure. Removal and prevention of LM and NTLMv1 use can be activated through the use of Group Policy security settings.  
 Plan to move to NTLMv2 and Kerberos at the least, with the long-term goal being Kerberos only.
@@ -405,7 +418,7 @@ Plan to move to NTLMv2 and Kerberos at the least, with the long-term goal being 
 * https://technet.microsoft.com/en-us/library/jj865674(v=ws.10).aspx
 * https://technet.microsoft.com/en-us/library/dd560653%28v=ws.10%29.aspx
 
-### Consider other Mitigations
+#### Consider other Mitigations
 
 Consider other mitigations detailed at https://adsecurity.org/?p=3299
 
@@ -414,7 +427,7 @@ Consider other mitigations detailed at https://adsecurity.org/?p=3299
 * https://adsecurity.org/?p=3299
 * * *
 
-### Deploy security back-port patch (KB2871997)
+#### Deploy security back-port patch (KB2871997)
 
 Ensure all Windows systems prior to Windows 8.1 & Windows Server 2012 R2 have the KB2871997 patch installed. This patch updates earlier supported versions of Windows with security enhancements baked into Windows 8.1 & Windows Server 2012 R2.
 
@@ -423,7 +436,7 @@ Ensure all Windows systems prior to Windows 8.1 & Windows Server 2012 R2 have th
 * https://adsecurity.org/?p=559
 * https://blogs.technet.microsoft.com/kfalde/2014/11/01/kb2871997-and-wdigest-part-1/
 
-### Prevent local "administrator" accounts from authenticating over the network
+#### Prevent local "administrator" accounts from authenticating over the network
 
 While the local Administrator (RID 500) account on two different computers has a different SID, if they have the same account name and password, the local Administrator account from one can authenticate as Administrator on the other. The same is true with any local account that is duplicated on multiple computers.  
 This presents a security issue if multiple (or all) workstations in an organization have the same account name and password since compromise of one workstation results in compromise of all.
@@ -435,7 +448,7 @@ These SIDs are also added in earlier supported versions of Windows by installing
 
 `Install patch KB2871997`
 
-#### Configure through Group Policy:
+##### Configure through Group Policy:
 
 ```
 1. Open Group Policy Management (gpmc.msc or via MMC Group Policy Object Editor)  
@@ -446,13 +459,13 @@ These SIDs are also added in earlier supported versions of Windows by installing
 
 * * *
 
-### Remote Connections
+#### Remote Connections
 
-#### RDP Restricted Admin (Connect to only 1 resource)
+##### RDP Restricted Admin (Connect to only 1 resource)
 
 `mstsc /v:server /restrictedAdmin`
 
-##### Enable Restricted Admin via Registry
+###### Enable Restricted Admin via Registry
 
 `Manually create registry entry HKEY_LOCAL_MACHINESystemCurrentControlSetControlLsa DWORD DisableRestrictedAdmin=0`
 
@@ -460,7 +473,7 @@ or
 
 `reg add HKEY_LOCAL_MACHINESystemCurrentControlSetControlLsa /v DisableRestrictedAdmin /d 0 /t REG_DWORD`
 
-##### Enable Restricted Admin via GPO
+###### Enable Restricted Admin via GPO
 
 ```
 1. Open Group Policy Management (gpmc.msc or via MMC Group Policy Object Editor)  
@@ -468,11 +481,11 @@ or
 3. Set "Restrict Delegation of credential to remote servers" to enable
 ```
 
-#### RDP Windows Defender Remote Credential Guard (Connect to multiple resources)
+##### RDP Windows Defender Remote Credential Guard (Connect to multiple resources)
 
 `mstsc /v:server /remoteguard`
 
-##### Enable Windows Defender Credential Guard via Registry
+###### Enable Windows Defender Credential Guard via Registry
 
 `Manually create registry entry HKEY_LOCAL_MACHINESystemCurrentControlSetControlLsa DWORD DisableRestrictedAdmin=0`
 
@@ -480,7 +493,7 @@ or
 
 `reg add HKEY_LOCAL_MACHINESystemCurrentControlSetControlLsa /v DisableRestrictedAdmin /d 0 /t REG_DWORD`
 
-##### Enable WinDef Cred Guard via GPO
+###### Enable WinDef Cred Guard via GPO
 
 ```
 1. Open Group Policy Management (gpmc.msc or via MMC Group Policy Object Editor)  
@@ -494,13 +507,13 @@ or
 
 * * *
 
-### Limit Client-to-Client Communication (Implement _and Configure_ Host Based Firewalls)
+#### Limit Client-to-Client Communication (Implement _and Configure_ Host Based Firewalls)
 
 * Clients and Server should be split into separate OU's
 * Enable the Windows Firewall through GPO
 * (Optional) Add exceptions to systems that are used to manage other hosts such as Sysadmins. Use a jump host to minimize exposure.
 
-#### Enable Firewall
+##### Enable Firewall
 
 **PowerShell**
 
@@ -519,14 +532,14 @@ Set-NetFirewallProfile -DefaultInboundAction Block -DefaultOutboundAction Allow 
 
 * https://technet.microsoft.com/en-us/library/hh831755(v=ws.11).aspx
 
-### Block/control TCP/UDP access from the Internal network and DMZ
+#### Block/control TCP/UDP access from the Internal network and DMZ
 
 * Evaluate the need for servers to connect to the Internet.
 * Create a list of systems outside the network that require access. Limit access using this whitelist.
 * Configure firewall rules to enforce these traffic policies.
 * * *
 
-### Block out bound TCP/UDP access from the Client systems to outbound networks.
+#### Block out bound TCP/UDP access from the Client systems to outbound networks.
 
 Clients generally only need a few ports to connect out bound. Limit access from client workstations to these ports.
 
@@ -535,7 +548,7 @@ Clients generally only need a few ports to connect out bound. Limit access from 
 * Rule can be managed at the HOST level via GPO or the network level via firewall rules.
 * * *
 
-### Implement a Proxy for All Outbound Traffic
+#### Implement a Proxy for All Outbound Traffic
 
 Force systems to traverse an proxy to communicate outbound. It is preferred to only allow authenticated communications. This prevents privilege users (SYSTEM, root) from communicating outbound.
 
@@ -543,7 +556,7 @@ Force systems to traverse an proxy to communicate outbound. It is preferred to o
 * If possible, require user authentication
 * Prevent outbound access if a client or system attempts to connect to external port directly using network firewall rules
 
-#### Create a new GPO to manage the proxy settings
+##### Create a new GPO to manage the proxy settings
 
 Edit the GPO
 
@@ -561,11 +574,8 @@ User Configuration>Administrative Templates>Windows Components>Internet Explorer
 Set Disable the Connections Page to Enabled
 ```
 
-* * *
-
-## Configurations
-
-### AutoRuns
+### Other Configurations
+#### AutoRuns
 
 ```
 1. De-select "Hide Microsoft Entries"  
@@ -577,15 +587,15 @@ Set Disable the Connections Page to Enabled
 
 * * *
 
-### Application White/Black listing
+#### Application White/Black listing
 
 A number of solutions exist to limit the applications a user can use on a system. AppLocker allows you to specify which users or groups can run particular applications in your organization based on unique identities of files. If you use AppLocker, you can create rules to allow or deny applications from running.
 
 * * *
 
-### Applocker
+#### Applocker
 
-#### AppLocker Executable Path Restrictions
+##### AppLocker Executable Path Restrictions
 
 ```
 1. Open Group Policy Management (gpmc.msc or via MMC Group Policy Object Editor)  
@@ -599,7 +609,7 @@ A number of solutions exist to limit the applications a user can use on a system
 9. Create > Yes
 ```
 
-##### Interesting Paths
+###### Interesting Paths
 
 ```
 1. <drive letter>users<username>appdata (%AppData% or for extension %AppData%*.exe 5AppData%**.exe)  
@@ -609,7 +619,7 @@ A number of solutions exist to limit the applications a user can use on a system
 5. programdata
 ```
 
-#### Explicit Whitelisting
+##### Explicit Whitelisting
 
 ```
 1. Open Group Policy Management (gpmc.msc or via MMC Group Policy Object Editor)  
@@ -622,7 +632,7 @@ c. %HKEY_LOCAL_MACHINESOFTWAREMicrosoftWindowsCurrentVersionProgramFilesDir%
 d. *.lnk
 ```
 
-#### Interesting file extensions
+##### Interesting file extensions
 
 `.ade, .adp, .ani, .bas, .bat, .chm, .cmd, .com, .cpl, .crt, .exe, .hlp, .ht, .hta, .inf, .ins, .isp, .jar, .job, .js, .jse, .lnk, .mda, .mdb, .mde, .mdz, .msc, .msi, .msp, .mst, .ocx, .pcd, .ps1, .reg, .scr, .sct, .shs, .svg, .url, .vb, .vbe, .vbs, .wbk, .wsc, .ws, .wsf, .wsh, .exe, .pif, .pub, .ip`
 
@@ -721,6 +731,82 @@ Get-EventLog -LogName System -ComputerName
 ##### Return a list of all security-auditing categories and subcategories (use an elevated prompt)
 
 `auditpol /list /subcategory:*`
+
+* * *
+
+## Linux Logs
+Linux logs establish a timeline of events for the system, applications, and processes. Each log can be a valuable security and troubleshooting tool if used appropriately.
+
+!!! Note
+    Although most are commonly stored in /var/log/, the name and location of each log will change based upon the distribution and release
+
+
+#### Syslog / Messages
+* Generic global system activity, Informational
+* Location: /var/log/syslog (Debian / Ubuntu)
+* Location: /var/log/messages (RedHat / CentOS)
+* Non-kernel boot errors, application-related service errors and the messages that are logged during system startup
+
+#### Audit
+* Information about Linux audit daemon
+* Location: /var/log/audit
+* Establishes an audit trail by logging every action on the server
+    * Track security-relevant events, violations of system policies, and other potential misuse or unauthorized activities
+    * Choose which actions to monitor and to what level
+
+#### Auth / Secure Logs
+* Authentication related events, User Authorization
+* Location: /var/log/auth.log (Debian / Ubuntu)
+* Location: /var/log/secure (RedHat / CentOS)
+* Failed login attempts, password sprays, brute force attempts, sudo, ssh
+
+#### Fail
+* Failed login attempts
+* Location: /var/log/faillog
+* Failed login attempts, password sprays, brute force attempts
+
+#### Boot
+* Boot related events and startup processes
+* Location: /var/log/boot.log
+* Improper shutdown, shutdown duration, unplanned reboots, boot failures, boot processes
+
+#### Cron
+* Information on cron jobs
+* Location: /var/log/cron
+* Records information on cron jobs to include success, failure, errors 
+
+#### KERN
+* Kernel events
+* Location: /var/log/kern.log
+* Kernel related errors and warnings
+
+#### DMESG
+* Kernel Buffer Messages
+* Location: /var/log/dmesg
+* Hardware devices, drivers, status, errors
+
+#### httpd
+* Apache Logs
+* Location: /var/log/httpd, /var/log/apache
+* Apache logs stored in two different files
+    * error.log
+        * Contains messages related to httpd and other system related errors
+        * Events and error records while processing httpd requests
+        * Diagnostic information
+    * access.log
+        * All access requests received over HTTP 
+        * Tracks every page served and every file loaded by Apache
+        * Logs the IP address and user of all clients that make connection requests
+        * Stores status of the access requests
+
+#### MySQL
+* Location: 
+    * /var/log/mysql.log (Debian / Ubuntu)
+    * /var/log/mysqld.log (RedHat / CentOS)
+* Debug, failure, and success messages related to mysql, mysqld, and mysqld_safe
+    * Use to identify problems while starting, running, or stopping mysqld
+    * Get information about client connections
+    * Setup long_query_time parameter to obtain information about query locks and slow running queries
 
 * * *
 
@@ -1222,7 +1308,7 @@ SecRule RESPONSE_BODY "badguy" "phase:4, msg:'HoneyToken Exfil Detected', tag:'H
 
 * * *
 
-#### Splunk
+#### Splunk Examples
 
 Note these are examples and are mainly illustrated as templates for creating your own internal searches
 
@@ -1334,7 +1420,7 @@ and
 
 * * *
 
-#### Snort
+#### Snort Examples
 
 Note these are examples and are mainly illustrated as templates for creating your own internal searches
 
