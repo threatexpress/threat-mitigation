@@ -8,7 +8,7 @@ The following information was composed by Andrew Chiles (@andrewchiles), Joe Ves
 - [General Recommendations](#general-recommendations)
 - [Account Management](#account-management)
 - [Windows Logs](#windows-logs)
-    -[PowerShell Module Logging](#powershell-module-logging)
+    - [PowerShell Module Logging](#powershell-module-logging)
 - [Windows Recommended Configurations](#windows-recommended-configurations)
     - [Disable Windows Legacy or Unused Features](#disable-windows-legacy-or-unused-features)
     - [Other Configurations](#other-configurations)
