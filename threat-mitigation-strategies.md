@@ -13,7 +13,9 @@ The following information was composed by Andrew Chiles (@andrewchiles), Joe Ves
     - [Disable Windows Legacy or Unused Features](#disable-windows-legacy-or-unused-features)
     - [Other Configurations](#other-configurations)
 - [Manual Hunting and Detection Examples](#manual-hunting-and-detection-examples)
-- [Linux Logs](#linux-logs)
+- [Linux](#linux)
+    - [Linux 2FA (Google)](#linux-2fa-google)
+    - [Linux Logs](#linux-logs)
 - [Network](#network)
     - [Basic PCAP Carving (*nix)](#basic-pcap-carving-nix)
     - [ELSA(BRO queries)](#elsa-bro-queries) 
@@ -733,8 +735,77 @@ Get-EventLog -LogName System -ComputerName
 `auditpol /list /subcategory:*`
 
 * * *
+## Linux
 
-## Linux Logs
+### Linux 2FA (Google)
+
+##### Generate your key (please do use a passphrase)
+`ssh-keygen`
+
+##### Copy your public key to the server
+`ssh-copy-id -i ~/.ssh/id_rsa.pub username@server`
+
+##### Install Google's PAM
+`sudo apt install libpam-google-authenticator`
+
+##### Run 
+```
+google-authenticator
+
+Time-based codes = yes
+Use your app to scan the QR code, then save the backup codes
+Update config = yes
+Disallow multiple uses = yes
+Extend code window = no
+Rate limiting = yes
+```
+
+!!! Note
+    You can copy config ~/.google-authenticator to multiple servers if inclined
+
+##### Modify /etc/pam.d/sshd
+```
+Comment and add
+
+#@include common-auth
+auth required pam_google_authenticator.so nullok
+
+```
+
+!!! Note
+    "nullok" allows you to test the setup without enforcing, remove after testing
+
+##### Modify /etc/ssh/sshd_config
+```
+ChallengeResponseAuthentication yes
+PasswordAuthentication no
+
+#Add to bottom of file
+Authentication Methods publickey,keyboard-interactive
+```
+
+##### Restart the service then test from a new shell
+`sudo systemctl restart sshd.service`
+
+
+#### 2FA Service Account Use
+```
+#skip if existing user and group
+sudo groupadd services
+sudo useradd <svcuser>
+sudo usermod -a -G services <svcuser>
+```
+
+##### Add to /etc/pam.d/ssh for service use (change to your group name if existing)
+```
+auth [success=done default=ignore] pam_succeed_if.so user ingroup services
+```
+
+!!! Note
+    2FA must be disabled for svc accounts; however, this does allow access to server without 2FA
+
+
+### Linux Logs
 Linux logs establish a timeline of events for the system, applications, and processes. Each log can be a valuable security and troubleshooting tool if used appropriately.
 
 !!! Note
