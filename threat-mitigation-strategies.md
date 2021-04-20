@@ -896,6 +896,14 @@ Linux logs establish a timeline of events for the system, applications, and proc
 
 Note: The snippets below are examples for pcap carving. I'd highly recommend using bro/  for traffic analysis.
 
+##### Get general proto stats from pcap
+
+`tshark -r file.pcap -qz io,phs`
+
+##### Get lots of traffic stats
+
+`tshark -r file.pcap -qz ipv6_hosts,tree -qz ipv6_srcdst,tree -qz ipv6_ptype,tree -qz ip_hosts,tree -qz ip_srcdst,tree -qz conv,ip -qz conv,udp -qz conv,tcp -qz http_srv,tree -qz http_seq,tree -qz http_req,tree -qz http,tree -qz http,stat -qz dns,tree -qz io,phs -qz ptype,tree`
+
 ##### Get certificates from pcap (use BRO if possible)
 
 `tshark -nr file.pcap -2 -R "ssl.handshake.certificate" -V > cert.txt`
@@ -907,6 +915,18 @@ or
 ##### View certificates (see BRO)
 
 `openssl x509 -in certsname.der -inform der -text -noout`
+
+##### Get DNS queris from pcap
+
+`tshark -r file.pcap -Y dns -T fields -e ip.src -e dns.qry.name -e dns.flags.response`
+
+or
+
+`tshark -r file.pcap -f "src port 53" -n -T fields -e dns.qry.name -e dns.resp.addr`
+
+or
+
+`tshark -nr file.pcap -2 -R dns -V`
 
 ##### Get DNS queries from pcap and count instances
 
@@ -946,7 +966,15 @@ or
 | 22    | BADTRUNC  | Bad Truncation                    |  
 | 23    | BADCOOKIE | Bad/missing Server Cookie         |  
 
+##### Extract files
+
+`tshark -nr file.pcap --export-objects http,folderlocation`
+
 ##### Get User-Agents from pcap
+
+`tshark -r file.pcap -Y http.request -T fields -e ip.src -e http.host -e http.user_agent |uniq`
+
+or
 
 `tshark -r /path/file.pcap -T fields -e http.user_agent|sort -n -k1|uniq -c|sort -n`
 
@@ -997,6 +1025,9 @@ or
 ##### Get data & hex from first two packets in pcap
 
 `tcpdump -n -r /path/file.pcap -c2 -x -v`
+
+##### exclude ssdp
+`tshark -r ~/temp.pcap -2 -R "http.request or ssl.handshake.type eq 1" -R "not ssdp" -T fields -e ip.src -e tcp.srcport -e ip.dst -e tcp.dstport -e http.host`
 
 ##### Get frames that have tcp header length gt 20 and port 25
 
