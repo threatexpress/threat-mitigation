@@ -904,6 +904,18 @@ Note: The snippets below are examples for pcap carving. I'd highly recommend usi
 
 `tshark -r file.pcap -qz ipv6_hosts,tree -qz ipv6_srcdst,tree -qz ipv6_ptype,tree -qz ip_hosts,tree -qz ip_srcdst,tree -qz conv,ip -qz conv,udp -qz conv,tcp -qz http_srv,tree -qz http_seq,tree -qz http_req,tree -qz http,tree -qz http,stat -qz dns,tree -qz io,phs -qz ptype,tree`
 
+##### Get OCSP Req/Resp
+
+`tshark -r file.pcap ocsp`
+
+or
+
+`tshark -r file.pcap -Y ocsp -T fields -e ip.src -e ip.dst -e http.host -e http.request.method -e http.content_type -e http.request.uri -e http.user_agent`
+
+or
+
+`tshark -r file.pcap -Y 'http contains "application/ocsp-request" or http contains "application/ocsp-response" or http.request.uri matches "(.)*/M..w(.)*"'`
+
 ##### Get certificates from pcap (use BRO if possible)
 
 `tshark -nr file.pcap -2 -R "ssl.handshake.certificate" -V > cert.txt`
