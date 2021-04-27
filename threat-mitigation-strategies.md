@@ -781,7 +781,7 @@ ChallengeResponseAuthentication yes
 PasswordAuthentication no
 
 #Add to bottom of file
-Authentication Methods publickey,keyboard-interactive
+AuthenticationMethods publickey,keyboard-interactive
 ```
 
 ##### Restart the service then test from a new shell
