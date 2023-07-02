@@ -1427,14 +1427,59 @@ SecRule RESPONSE_BODY "badguy" "phase:4, msg:'HoneyToken Exfil Detected', tag:'H
 Note these are examples and are mainly illustrated as templates for creating your own internal searches
 
 ##### Potential Beaconing Activity
+
 ```
 tag=dns message_type="QUERY" | fields _time, query | streamstats current=f last(_time) as last_time by query | eval gap=last_time - _time | stats count avg(gap) AS AverageBeaconTime var(gap) AS VarianceBeaconTime BY query | eval AverageBeaconTime=round(AverageBeaconTime,3), VarianceBeaconTime=round(VarianceBeaconTime,3) | sort -count | where VarianceBeaconTime < 60 AND count > 2 AND AverageBeaconTime>1.000 | table  query VarianceBeaconTime  count AverageBeaconTime
 ```
 
 ##### Number of hosts potentially beaconing
+
 ```
 tag=dns message_type="QUERY" | fields _time, src, query | streamstats current=f last(_time) as last_time by query | eval gap=last_time - _time | stats count dc(src) AS NumHosts avg(gap) AS AverageBeaconTime var(gap) AS VarianceBeaconTime BY query | eval AverageBeaconTime=round(AverageBeaconTime,3), VarianceBeaconTime=round(VarianceBeaconTime,3) | sort –count | where VarianceBeaconTime < 60 AND AverageBeaconTime > 0
 ```
+
+##### Hosts with lots of subdomain queries
+
+```tag=dns message_type="QUERY" | eval list="mozilla" | `ut_parse_extended(query, list)`` | stats dc(ut_subdomain) AS HostsPerDomain BY ut_domain | sort -HostsPerDomain```
+
+##### Top 100 clients DNS volume
+
+```
+tag=dns message_type="Query" | timechart span=1m limit=100 usenull=f useother=f count AS Requests by src
+```
+
+##### DNS records over time
+
+```
+tag=dns message_type="QUERY" | timechart span=1h count BY record_type
+```
+
+##### DNS Size and Volume Comparison
+
+```
+tag=dns message_type="QUERY" | mvexpand query | eval queryLength=len(query)| stats count by queryLength, src | sort -queryLength, count | table src queryLength count | head 1000
+```
+
+##### Potential Beaconing Detection
+
+`index=proxy sourcetype=bluecoat:proxysg:access:syslog url=* | eval current_time=_time | sort 0 + current_time | streamstats global=f window=2 current=f last(current_time) AS previous_time by src, url | eval diff_time=current_time-previous_time| eventstats count, stdev(diff_time) AS std by src, url`
+
+
+##### Detect webshell activity (note this should be updated at implementation and often)
+
+`index=sysmon ParentImage="*pache*" ParentImage="* omcat*" ParentImage="* ginx*" ParentImage="*\httpd*" ParentImage="*\php-cgi*" ParentImage="*\w3wp*" CommandLine="*whoami*" CommandLine="*net*" CommandLine="*ipconfig*" CommandLine="*hostname*" CommandLine="*systeminfo*" CommandLine="*cmd*" CommandLine="*sh*" CommandLine="*bash*" CommandLine="*powershell*"`
+
+##### Detect potential SQLi
+
+`index=weblogs sourcetype=MSWindows:2008R2:IIS | regex cs_uri_query="(?i)(?:--|;|/*|@|@@version|char|alter|begin|cast|create|cursor|declare|delete|drop|end|exec|fetch|insert|kill|open|select|sys|table|update)" | stats count by host c_ip cs_uri_stem cs_uri_query | rex field=cs_uri_query "(?i)(?<suspect>--|;|/*|@|@@version|char|alter|begin|cast|create|cursor|declare|delete|drop|end|exec|fetch|insert|kill|open|select|sys|table|update)" max_match=0`
+
+##### View HTTP POST with response
+
+`index=json_bro eventtype=bro_http method=POST AND status <=403 AND uri=*.php OR uri=*.jsp OR uri=*.cfm OR uri=*.asp OR uri=*.aspx |stats values(id.orig_h) AS Source, values,(hostname) AS Destination by uri`
+
+##### Find Weird User-Agents
+
+`index=json_bro eventtype-bro_http |stats count by user_agent | sort -count | reverse`
 
 ##### New unauthorized service
 
@@ -1508,25 +1553,6 @@ and
 
 `index=sysmon sourcetype="WinEventLog:Microsoft-Windows-Sysmon/Operational" EventCode=4688 Token_Elevation_Type="*(2)"`
 
-##### Potential Beaconing Detection
-
-`index=proxy sourcetype=bluecoat:proxysg:access:syslog url=* | eval current_time=_time | sort 0 + current_time | streamstats global=f window=2 current=f last(current_time) AS previous_time by src, url | eval diff_time=current_time-previous_time| eventstats count, stdev(diff_time) AS std by src, url`
-
-##### Detect webshell activity (note this should be updated at implementation and often)
-
-`index=sysmon ParentImage="*pache*" ParentImage="* omcat*" ParentImage="* ginx*" ParentImage="*\httpd*" ParentImage="*\php-cgi*" ParentImage="*\w3wp*" CommandLine="*whoami*" CommandLine="*net*" CommandLine="*ipconfig*" CommandLine="*hostname*" CommandLine="*systeminfo*" CommandLine="*cmd*" CommandLine="*sh*" CommandLine="*bash*" CommandLine="*powershell*"`
-
-##### Detect potential SQLi
-
-`index=weblogs sourcetype=MSWindows:2008R2:IIS | regex cs_uri_query="(?i)(?:--|;|/*|@|@@version|char|alter|begin|cast|create|cursor|declare|delete|drop|end|exec|fetch|insert|kill|open|select|sys|table|update)" | stats count by host c_ip cs_uri_stem cs_uri_query | rex field=cs_uri_query "(?i)(?<suspect>--|;|/*|@|@@version|char|alter|begin|cast|create|cursor|declare|delete|drop|end|exec|fetch|insert|kill|open|select|sys|table|update)" max_match=0`
-
-##### View HTTP POST with response
-
-`index=json_bro eventtype=bro_http method=POST AND status <=403 AND uri=*.php OR uri=*.jsp OR uri=*.cfm OR uri=*.asp OR uri=*.aspx |stats values(id.orig_h) AS Source, values,(hostname) AS Destination by uri`
-
-##### Find Weird User-Agents
-
-`index=json_bro eventtype-bro_http |stats count by user_agent | sort -count | reverse`
 
 ##### Get high severity EPO events
 
