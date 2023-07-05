@@ -1428,15 +1428,11 @@ Note these are examples and are mainly illustrated as templates for creating you
 
 ##### Potential Beaconing Activity
 
-```
-tag=dns message_type="QUERY" | fields _time, query | streamstats current=f last(_time) as last_time by query | eval gap=last_time - _time | stats count avg(gap) AS AverageBeaconTime var(gap) AS VarianceBeaconTime BY query | eval AverageBeaconTime=round(AverageBeaconTime,3), VarianceBeaconTime=round(VarianceBeaconTime,3) | sort -count | where VarianceBeaconTime < 60 AND count > 2 AND AverageBeaconTime>1.000 | table  query VarianceBeaconTime  count AverageBeaconTime
-```
+```tag=dns message_type="QUERY" | fields _time, query | streamstats current=f last(_time) as last_time by query | eval gap=last_time - _time | stats count avg(gap) AS AverageBeaconTime var(gap) AS VarianceBeaconTime BY query | eval AverageBeaconTime=round(AverageBeaconTime,3), VarianceBeaconTime=round(VarianceBeaconTime,3) | sort -count | where VarianceBeaconTime < 60 AND count > 2 AND AverageBeaconTime>1.000 | table  query VarianceBeaconTime  count AverageBeaconTime```
 
 ##### Number of hosts potentially beaconing
 
-```
-tag=dns message_type="QUERY" | fields _time, src, query | streamstats current=f last(_time) as last_time by query | eval gap=last_time - _time | stats count dc(src) AS NumHosts avg(gap) AS AverageBeaconTime var(gap) AS VarianceBeaconTime BY query | eval AverageBeaconTime=round(AverageBeaconTime,3), VarianceBeaconTime=round(VarianceBeaconTime,3) | sort –count | where VarianceBeaconTime < 60 AND AverageBeaconTime > 0
-```
+```tag=dns message_type="QUERY" | fields _time, src, query | streamstats current=f last(_time) as last_time by query | eval gap=last_time - _time | stats count dc(src) AS NumHosts avg(gap) AS AverageBeaconTime var(gap) AS VarianceBeaconTime BY query | eval AverageBeaconTime=round(AverageBeaconTime,3), VarianceBeaconTime=round(VarianceBeaconTime,3) | sort –count | where VarianceBeaconTime < 60 AND AverageBeaconTime > 0```
 
 ##### Hosts with lots of subdomain queries
 
@@ -1444,21 +1440,15 @@ tag=dns message_type="QUERY" | fields _time, src, query | streamstats current=f 
 
 ##### Top 100 clients DNS volume
 
-```
-tag=dns message_type="Query" | timechart span=1m limit=100 usenull=f useother=f count AS Requests by src
-```
+`tag=dns message_type="Query" | timechart span=1m limit=100 usenull=f useother=f count AS Requests by src`
 
 ##### DNS records over time
 
-```
-tag=dns message_type="QUERY" | timechart span=1h count BY record_type
-```
+`tag=dns message_type="QUERY" | timechart span=1h count BY record_type`
 
 ##### DNS Size and Volume Comparison
 
-```
-tag=dns message_type="QUERY" | mvexpand query | eval queryLength=len(query)| stats count by queryLength, src | sort -queryLength, count | table src queryLength count | head 1000
-```
+`tag=dns message_type="QUERY" | mvexpand query | eval queryLength=len(query)| stats count by queryLength, src | sort -queryLength, count | table src queryLength count | head 1000`
 
 ##### Potential Beaconing Detection
 
