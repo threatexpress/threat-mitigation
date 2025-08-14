@@ -18,6 +18,7 @@ The following information was composed by Andrew Chiles (@andrewchiles), Joe Ves
     - [Linux Logs](#linux-logs)
 - [Network](#network)
     - [Basic PCAP Carving (*nix)](#basic-pcap-carving-nix)
+    - [Wireshark Syntax](#wireshark-syntax)
     - [ELSA(BRO queries)](#elsa-bro-queries) 
     - [BRO Logs](#bro-logs)
     - [BRO Carving](#bro-carving)
@@ -1170,7 +1171,119 @@ or
 
 `rwfilter phishing-attack.silk --proto=6 --bytes=100000- --pass=stdout |rwcut -f 1-8`
 * * *
+* 
+#### Wireshark Syntax
+Traffic Filters - Filter by:
 
+##### Protocol
+```
+tcp, udp, http, https, tls, dns, ssh, nfs, smb, ldap, ftp, telnet, tftp, snmp, rdp, smtp, pop, imap, ssdp,
+arp, ip, ipv6, icmp, igmp,
+eth, vlan, modbus, gopher, 
+ntlm, kerberos, radius
+```
+
+##### IP in any direction
+`ip.addr == 10.10.1.12`
+
+##### IP as source
+`ip.src == 10.10.1.12`
+
+##### IP as destination
+`ip.dst == 10.10.1.12`
+
+##### Exclude IP as destination
+`ip.dst != 10.10.1.12`
+
+`!(ip.dst == 10.10.1.12 and ip.dst == 10.10.1.13)`
+
+#### From source to dest
+`ip.src == 10.10.1.12 and ip.dst == 10.10.1.14`
+
+##### Subnet
+`ip.addr == 10.10.1.0/24`
+
+##### Filter by port
+`tcp.port == 80`
+
+`tcp.port in {80, 443, 455, 8888}`
+
+##### Exclude common ports
+`!tcp.port in {80,8080,8000,443,445,3389}`
+
+##### DNS Requests
+`dns.flags.response == 0`
+
+##### DNS Response
+`dns.flags.response == 1`
+
+##### DNS Response for domain
+`dns.resp.name == "threatexpress.com"`
+
+##### HTTP Method
+`http.request.method == "POST"`
+
+#### Beginning of encrypted session
+`tls.handshake.type == 1`
+
+#### Old tls
+`tls.handshake.version in {0x0300,0x0301,0x0302}`
+
+##### Keywords and auth material
+`frame contains "password"`
+
+`frame matches "password"`
+
+`http.cookie contains "sessionid"`
+
+##### Keywords and auth case insensitive
+`frame matches "(?i)(pass)"`
+
+##### User agent
+`http.user_agent matches "Mozilla/4.0"`
+
+`http.user_agent matches "nmap"`
+
+##### Server Names
+`(http.request or tls.handshake.type eq 1 or (tcp.port eq 8080 and tcp.flags eq 0x0002)) and !(ssdp)`
+
+##### tcp scans
+`tcp.completeness == 31
+This is a "normal" conversation that includes the full handshake (1 + 2 + 4), data (8), and a graceful close with a FIN packet (16).`
+
+`tcp.completeness in {33..46}`
+
+| TCP Event         | Number  | Useful    |
+| ----------------- | ------- | --------- |
+| SYN               | 1       | Syn Scan? |
+| SYN-ACK           | 2       |           |
+| Handshake no data | 7       | Port scan?|
+| ACK               | 4       |           |
+| DATA              | 8       |           |
+| FIN               | 16      |           |
+| Handshake w convo | 31      | Normal    |
+| RST               | 32      |           |
+| Handshake w Reset | 47      | FW or App?|
+
+##### OS Fingerprinting
+`icmp.type == 13 || icmp.type == 15 || icmp.type ==17`
+
+##### Long TCP Connection
+`tcp.time_relative > 60`
+
+##### Abnormal TCP
+`tcp.analysis.flags`
+
+##### Useful capture info
+`Statistics > Capture File Properties`
+
+`Statistics > Conversations`
+
+`Analyze > Show Packet Bytes`
+
+`Right click intersting frame > Packet comments
+Search using frame.comment`
+* * *
 #### ELSA (BRO queries)
 
 ##### ELSA most common svc
