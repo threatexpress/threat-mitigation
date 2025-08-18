@@ -1173,6 +1173,7 @@ or
 * * *
 * 
 #### Wireshark Syntax
+See tshark examples above.
 Traffic Filters - Filter by:
 
 ##### Protocol
@@ -1182,6 +1183,9 @@ arp, ip, ipv6, icmp, igmp,
 eth, vlan, modbus, gopher, 
 ntlm, kerberos, radius
 ```
+
+### TCP Stream
+`tcp.stream == 1`
 
 ##### IP in any direction
 `ip.addr == 10.10.1.12`
@@ -1223,8 +1227,11 @@ ntlm, kerberos, radius
 ##### HTTP Method
 `http.request.method == "POST"`
 
-#### Beginning of encrypted session
+#### Beginning of encrypted session (TLS)
 `tls.handshake.type == 1`
+
+#### TLS Handshake
+`tls.handshake.type in {1, 2}`
 
 #### Old tls
 `tls.handshake.version in {0x0300,0x0301,0x0302}`
@@ -1248,6 +1255,14 @@ ntlm, kerberos, radius
 `(http.request or tls.handshake.type eq 1 or (tcp.port eq 8080 and tcp.flags eq 0x0002)) and !(ssdp)`
 
 ##### tcp scans
+`(tcp.flags == 0x002) && (tcp.hdr_len == 20)`
+
+`tcp.window_size_value == 1024 and tcp.flags.syn==1`
+
+`tcp.flags.syn==1 and tcp.flags.ack==1 and !(ip.src in {10.0.0.0/8,192.168.0.0/16,172.16.0.0/12})`
+
+`tcp.flags == 0`
+
 `tcp.completeness == 31
 This is a "normal" conversation that includes the full handshake (1 + 2 + 4), data (8), and a graceful close with a FIN packet (16).`
 
@@ -1273,6 +1288,20 @@ This is a "normal" conversation that includes the full handshake (1 + 2 + 4), da
 
 ##### Abnormal TCP
 `tcp.analysis.flags`
+
+`tcp.analysis.flags && !tcp.analysis.window_update`
+
+##### Odd TTL
+`ip.ttl < 50 and ip.ttl>30`
+
+##### Slow DNS
+`dns.time > 0.05`
+
+##### By Country Code (example Russia)
+`ip.geoip.country_iso == "RU"`
+
+##### http File Requests
+`http.request.uri matches "\\.(tar|php|png|jpg|exe|bin|zip|pdf)"`
 
 ##### Useful capture info
 `Statistics > Capture File Properties`
