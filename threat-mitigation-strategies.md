@@ -25,6 +25,7 @@ The following information was composed by Andrew Chiles (@andrewchiles), Joe Ves
     - [ModSecurity rules](#modsecurity-rules)
     - [Splunk Examples](#splunk-examples)
     - [Snort Examples](#snort-examples)
+    - [KQL Examples](#kql-examples)
 - [Additional Useful Info](#additional-useful-info)
 
 ---
