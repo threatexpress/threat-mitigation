@@ -1714,6 +1714,93 @@ Note these are examples and are mainly illustrated as templates for creating you
 
 * * *
 
+#### KQL Examples
+
+##### Potential beaconing
+Use Lens-TSVB to bucket by dns.question.name and look for low variances in @timestamp
+`event.dataset: dns and dns.question.name: *`
+
+Visualize count over time per url.full
+`event.category: network and network.protocol: http`
+
+HTTP Post with Response
+`network.protocol: http and http.request.method: "POST" and http.response.status_code <= 403 and url.extension: (php or jsp or cfm or asp or aspx)`
+
+##### Top 100 clients by DNS
+Use "Top Values" in Lens on source.ip
+`event.dataset: dns and dns.type: "query"`
+
+##### Top DNS by volume
+In Discover, set "Top Values" to dns.question.type
+`event.dataset: dns`
+
+##### Top DNS by size
+Requires a runtime field for length
+`dns.question.name.length > 50`
+
+##### Find Weird User-Agents
+Aggregate by user_agent.original
+`event.category: network and network.protocol: http`
+
+##### Find psexec
+`network.transport: tcp and destination.port: (139 or 445) and process.name: "psexesvc.exe"`
+
+##### Find port specific traffic
+`destination.port: 4444 or source.port: 4444`
+
+##### Find suspicious files extensions
+`file.extension: (ade or adp or ani or bas or bat or chm or cmd or com or cpl or crt or exe or hlp or hta or inf or ins or isp or jar or job or js or jse or lnk or mda or mdb or mde or mdz or msc or msi or msp or mst or ocx or pcd or ps1 or reg or scr or sct or shs or svg or url or vb or vbe or vbs or wbk or wsc or ws or wsf or wsh or pif or pub)`
+
+##### Potential webshell activity
+`process.parent.name: (*apache* or *tomcat* or *nginx* or httpd* or php-cgi* or w3wp*) and process.command_line: (*whoami* or *net* or *ipconfig* or *hostname* or *systeminfo* or *cmd* or *sh* or *bash* or *powershell*)`
+
+##### Potential SQLi
+`url.query: (*--* or *;* or */\** or *@* or *@@version* or *char* or *alter* or *begin* or *cast* or *create* or *cursor* or *declare* or *delete* or *drop* or *end* or *exec* or *fetch* or *insert* or *kill* or *open* or *select* or *sys* or *table* or *update*)`
+
+##### New Unauthorized Service
+`event.code: 7045 and not windows.service.name: "YourAUTHApplication"`
+
+##### Potential Process Abuse
+`event.code: 1 and process.name: ("whoami.exe" or "netstat.exe" or "tasklist.exe")`
+
+##### Potential User enumeration
+`process.name: "net.exe" and process.command_line: ("*group*" or "*localgroup*" or "*user*")`
+
+##### New process connecting to IP
+`event.code: 5156 and not source.ip: "10.10.10.15" and not process.executable: "C:\path\file.exe"`
+
+##### Find client-to-client SMB
+`event.code: 3 and destination.port: 445 and not source.ip: "FileServerIP" and not destination.ip: "SubnetGateways"`
+
+##### Find Named pipe
+`event.code: 17 and file.name: *`
+
+##### WMI Process Creation
+`(process.name: "wmic.exe" and process.command_line: "*process call create*") or process.parent.name: "wmiprvse.exe"`
+
+##### Powershell obfuscation or encoding
+`process.name: ("powershell.exe" or "pwsh.exe") and process.command_line: ("*-EncodedCommand*" or "*-Enc*" or "*-e*" or "*new-object*" or "*-nop*" or "*IEX*" or "*download*")`
+
+##### Admin Share Enumeration
+`event.code: 5145 and winlog.event_data.ShareName: (*C$* or *ADMIN$*) and winlog.event_data.AccessMask: "0x100180"`
+
+##### Potential Registry Persistence
+`event.code: 13 and registry.path: *\\Windows\\CurrentVersion\\Run*`
+
+##### Potential Startup Folder Persistence
+`file.path: *\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\*`
+
+##### Potential Credential Harvesting
+`process.command_line: ("*privileges::debug*" or "*sekurlsa::*" or "*kerberos::*" or "*lsadump::*")`
+
+##### Privilege Escalation
+`event.code: 4688 and winlog.event_data.TokenElevationType: "2"`
+
+##### High severity AV event
+`event.module: "mcafee" and event.severity: (high or critical)`
+
+* * *
+
 #### Additional Useful Info
 
 ##### Get methods from access.log
