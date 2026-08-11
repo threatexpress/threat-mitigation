@@ -1798,6 +1798,7 @@ Aggregate by user_agent.original
 `file.extension: (ade or adp or ani or bas or bat or chm or cmd or com or cpl or crt or exe or hlp or hta or inf or ins or isp or jar or job or js or jse or lnk or mda or mdb or mde or mdz or msc or msi or msp or mst or ocx or pcd or ps1 or reg or scr or sct or shs or svg or url or vb or vbe or vbs or wbk or wsc or ws or wsf or wsh or pif or pub)`
 
 Suspicious script creation
+
 `file.path: ("/var/www/*" or "/usr/share/nginx/html/*" or "/srv/www/*") and file.extension: ("php" or "phtml" or "php3" or "php4" or "php5" or "phps" or "phar" or "cgi" or "pl" or "py" or "jsp" or "sh")`
 
 ##### Potential webshell activity
@@ -1809,12 +1810,15 @@ or
 and
 
 Command injection or payloads in HTTP Requests
+
 `event.category: "network" and network.protocol: "http" and (url.query: (*whoami* or *cat%20/etc/passwd* or *%20id* or *uname%20-a* or *wget* or *curl* or *bash* or *nc%20* or *%2Fbin%2Fsh*) or http.request.body.content: (*whoami* or *cat /etc/passwd* or *id* or *uname -a* or *wget* or *curl*))`
 
 Common cli download user-agents
+
 `event.category: "network" and network.protocol: "http" and user_agent.original: (*curl* or *Wget* or *python-requests* or *Go-http-client* or *libwww-perl* or *Nikto* or *sqlmap* or *masscan* or *nmap*)`
 
 If post aren't normal
+
 `network.protocol: "http" and http.request.method: "POST" and http.response.status_code: 200 and url.extension: ("php" or "phtml" or "cgi" or "pl" or "py" or "jsp" or "asp")`
 
 ##### Potential SQLi
