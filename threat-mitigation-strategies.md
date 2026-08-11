@@ -25,6 +25,7 @@ The following information was composed by Andrew Chiles (@andrewchiles), Joe Ves
     - [ModSecurity rules](#modsecurity-rules)
     - [Splunk Examples](#splunk-examples)
     - [Snort Examples](#snort-examples)
+    - [Suricata Examples](#suricata-examples)
     - [KQL Examples](#kql-examples)
 - [Additional Useful Info](#additional-useful-info)
 
@@ -1715,6 +1716,47 @@ Note these are examples and are mainly illustrated as templates for creating you
 
 * * *
 
+#### Suricata Examples
+
+##### HTTP POST to Common Script/Webshell Extensions
+`alert http $HOME_NET any -> $EXTERNAL_NET $HTTP_PORTS (msg:"DETECT - HTTP POST to Script Extension (Potential Webshell Interaction)"; flow:established,to_server; http.method; content:"POST"; http.uri; pcre:"/\.(php|phtml|php3|php4|php5|cgi|pl|py|jsp|asp|aspx)($|\?)/i"; classtype:web-application-activity; sid:1000001; rev:1;)`
+
+##### Inbound Command Injection or Shell Payloads in HTTP URI / Body
+`alert http $EXTERNAL_NET any -> $HOME_NET $HTTP_PORTS (msg:"DETECT - Potential Command Injection Payload in HTTP URI"; flow:established,to_server; http.uri; pcre:"/(whoami|cat%20\/etc\/passwd|%20id|uname%20-a|wget|curl|bash|nc%20|\/bin\/sh)/i"; classtype:web-application-attack; sid:1000002; rev:1;)`
+`alert http $EXTERNAL_NET any -> $HOME_NET $HTTP_PORTS (msg:"DETECT - Potential Command Injection Payload in HTTP Body"; flow:established,to_server; http.request_body; pcre:"/(whoami|cat \/etc\/passwd|\bid\b|uname -a|wget|curl|bash|nc |\/bin\/sh)/i"; classtype:web-application-attack; sid:1000003; rev:1;)`
+
+##### SQL Injection Attempts in Query Strings
+`alert http $EXTERNAL_NET any -> $HOME_NET $HTTP_PORTS (msg:"DETECT - Potential SQL Injection in URI"; flow:established,to_server; http.uri; pcre:"/(\b(select|union|insert|update|delete|drop|alter|create|truncate|exec|char|cast)\b|--|;|\/\*|@@version)/i"; classtype:web-application-attack; sid:1000004; rev:1;)`
+
+##### Suspicious Command-Line or Recon User-Agents
+`alert http $HOME_NET any -> $EXTERNAL_NET $HTTP_PORTS (msg:"DETECT - Suspicious Downloader or Scanner User-Agent"; flow:established,to_server; http.user_agent; pcre:"^(curl|Wget|python-requests|Go-http-client|libwww-perl|Nikto|sqlmap|masscan|nmap)/i"; classtype:misc-activity; sid:1000005; rev:1;)`
+
+##### Direct IP Connection Without Host Header (Anomalous HTTP Traffic)
+`alert http $HOME_NET any -> $EXTERNAL_NET $HTTP_PORTS (msg:"DETECT - HTTP Request Lacking Host Header"; flow:established,to_server; http.host; content:""; classtype:misc-activity; sid:1000006; rev:1;)`
+
+##### PsExec Named Pipe Service Creation over SMB
+`alert smb $HOME_NET any -> $HOME_NET [139,445] (msg:"DETECT - PsExec Service Pipe Activity over SMB"; flow:established,to_server; smb.named_pipe; content:"psexesvc"; nocase; classtype:suspicious-filename-detect; sid:1000007; rev:1;)`
+
+##### Lateral SMB Traffic Between Endpoints (Excluding Authorized File Servers - update $FILE_SERVERS)
+`alert smb $HOME_NET any -> $HOME_NET [139,445] (msg:"DETECT - Potential Client-to-Client SMB Lateral Movement"; flow:established,to_server; classtype:suspicious-traffic; sid:1000008; rev:1;)`
+
+##### Admin Share Enumeration  Access over SMB (C$, ADMIN$)
+`alert smb $HOME_NET any -> $HOME_NET [139,445] (msg:"DETECT - Admin Share Access Attempt (C$ or ADMIN$)"; flow:established,to_server; smb.tree_connect; content:"C$"; fast_pattern; or; content:"ADMIN$"; classtype:suspicious-traffic; sid:1000009; rev:1;)`
+
+##### Excessively Long DNS Query Name (>50 Chars - Potential Tunneling/Exfiltration)
+`alert dns $HOME_NET any -> any 53 (msg:"DETECT - Excessively Long DNS Query Name (>50 chars)"; flow:to_server; dns.query; pcre:"/^[a-zA-Z0-9\-_]{50,}\./"; classtype:bad-unknown; sid:1000010; rev:1;)`
+
+##### High-Volume DNS TXT Queries (Potential DNS Tunneling)
+`alert dns $HOME_NET any -> any 53 (msg:"DETECT - DNS TXT Record Query (Potential DNS C2 Tunneling)"; flow:to_server; dns.query; dns.type; content:"TXT"; classtype:bad-unknown; sid:1000011; rev:1;)`
+
+##### Known C2 Shell Traffic on Port 4444
+`alert tcp any any -> any 4444 (msg:"DETECT - Inbound or Outbound Traffic on Port 4444"; flow:established; classtype:trojan-activity; sid:1000012; rev:1;)`
+
+##### Suspicious Script or Executable Downloads via HTTP
+`alert http $EXTERNAL_NET $HTTP_PORTS -> $HOME_NET any (msg:"DETECT - Executable or Script File Downloaded over HTTP"; flow:established,to_client; http.uri; pcre:"\.(sh|elf|bin|exe|ps1|bat|vbs|jar|pif|scr)($|\?)/i"; classtype:bad-unknown; sid:1000013; rev:1;)`
+
+* * *
+
 #### KQL Examples
 
 ##### Potential beaconing
@@ -1726,6 +1768,9 @@ Visualize count over time per url.full
 
 HTTP Post with Response
 `network.protocol: http and http.request.method: "POST" and http.response.status_code <= 403 and url.extension: (php or jsp or cfm or asp or aspx)`
+
+Outbound traffic on non-standard
+`event.category: "network" and network.direction: "outbound" and network.transport: "tcp" and not destination.port: (80 or 443 or 53 or 123 or 22 or 8080 or 8443)`
 
 ##### Top 100 clients by DNS
 Use "Top Values" in Lens on source.ip
@@ -1752,8 +1797,25 @@ Aggregate by user_agent.original
 ##### Find suspicious files extensions
 `file.extension: (ade or adp or ani or bas or bat or chm or cmd or com or cpl or crt or exe or hlp or hta or inf or ins or isp or jar or job or js or jse or lnk or mda or mdb or mde or mdz or msc or msi or msp or mst or ocx or pcd or ps1 or reg or scr or sct or shs or svg or url or vb or vbe or vbs or wbk or wsc or ws or wsf or wsh or pif or pub)`
 
+Suspicious script creation
+`file.path: ("/var/www/*" or "/usr/share/nginx/html/*" or "/srv/www/*") and file.extension: ("php" or "phtml" or "php3" or "php4" or "php5" or "phps" or "phar" or "cgi" or "pl" or "py" or "jsp" or "sh")`
+
 ##### Potential webshell activity
 `process.parent.name: (*apache* or *tomcat* or *nginx* or httpd* or php-cgi* or w3wp*) and process.command_line: (*whoami* or *net* or *ipconfig* or *hostname* or *systeminfo* or *cmd* or *sh* or *bash* or *powershell*)`
+
+or
+`process.parent.name: ("apache2" or "httpd" or "nginx" or "php-fpm" or "tomcat" or "node" or "python*") and process.name: ("sh" or "bash" or "dash" or "zsh" or "whoami" or "id" or "uname" or "cat" or "nc" or "ncat" or "netcat" or "curl" or "wget" or "python*" or "perl" or "php")`
+
+and
+
+Command injection or payloads in HTTP Requests
+`event.category: "network" and network.protocol: "http" and (url.query: (*whoami* or *cat%20/etc/passwd* or *%20id* or *uname%20-a* or *wget* or *curl* or *bash* or *nc%20* or *%2Fbin%2Fsh*) or http.request.body.content: (*whoami* or *cat /etc/passwd* or *id* or *uname -a* or *wget* or *curl*))`
+
+Common cli download user-agents
+`event.category: "network" and network.protocol: "http" and user_agent.original: (*curl* or *Wget* or *python-requests* or *Go-http-client* or *libwww-perl* or *Nikto* or *sqlmap* or *masscan* or *nmap*)`
+
+If post aren't normal
+`network.protocol: "http" and http.request.method: "POST" and http.response.status_code: 200 and url.extension: ("php" or "phtml" or "cgi" or "pl" or "py" or "jsp" or "asp")`
 
 ##### Potential SQLi
 `url.query: (*--* or *;* or */\** or *@* or *@@version* or *char* or *alter* or *begin* or *cast* or *create* or *cursor* or *declare* or *delete* or *drop* or *end* or *exec* or *fetch* or *insert* or *kill* or *open* or *select* or *sys* or *table* or *update*)`
@@ -1794,11 +1856,44 @@ Aggregate by user_agent.original
 ##### Potential Credential Harvesting
 `process.command_line: ("*privileges::debug*" or "*sekurlsa::*" or "*kerberos::*" or "*lsadump::*")`
 
+##### Potential SSH Brute/Password Spray
+`(event.dataset: "sshd" or event.module: "system") and event.action: "ssh_login" and event.outcome: "failure"`
+
 ##### Privilege Escalation
 `event.code: 4688 and winlog.event_data.TokenElevationType: "2"`
 
 ##### High severity AV event
 `event.module: "mcafee" and event.severity: (high or critical)`
+
+##### SSH Port Forwarding
+`process.name: "ssh" and process.command_line: (*-L* or *-R* or *-D* or *-N* or *-f*)`
+
+##### SUID Execution by non-root
+`event.category: "process" and process.saved_user.id: "0" and not user.id: "0"`
+
+##### Potential PrivEsc
+`process.name: "pkexec" or (process.executable: ("/tmp/*" or "/var/tmp/*" or "/dev/shm/*") and user.id: "0")`
+
+##### Interactive shell indicators
+`process.parent.name: "sudo" and process.name: ("bash" or "sh" or "zsh" or "dash" or "python*" or "perl" or "ruby" or "find" or "vim" or "nano" or "less" or "more" or "awk" or "env" or "gdb" or "man")`
+
+##### Profile Mod
+`file.path: ("/etc/profile" or "/etc/bash.bashrc" or "/etc/environment" or "*~/.bashrc" or "*~/.bash_profile" or "*~/.profile")`
+
+##### Preload Injection
+`file.path: "/etc/ld.so.preload" or process.environment: *LD_PRELOAD*`
+
+##### ssh Auth Key Mod
+`file.path: (*"/.ssh/authorized_keys"* or "/etc/ssh/authorized_keys/*")`
+
+##### Systemd or Timer Persistence
+`file.path: ("/etc/systemd/system/*" or "/lib/systemd/system/*" or "/usr/lib/systemd/system/*" or "~/.config/systemd/user/*")`
+
+##### Cron modification or creation
+`file.path: ("/etc/cron*" or "/etc/crontab" or "/var/spool/cron/crontabs/*")`
+
+##### Host information and enum
+`process.name: ("whoami" or "id" or "uname" or "hostname" or "ip" or "ifconfig" or "netstat" or "ss" or "lscpu" or "lsusb" or "lspci" or "w" or "who" or "last" or "ps") and not process.parent.name: ("monitoring-agent" or "ansible*" or "puppet" or "salt-minion" or "zabbix*")`
 
 * * *
 
